@@ -2,10 +2,10 @@
   "name": "hub-front-end",
   "version": "0.0.1",
   "description": ".",
-  "main": "index.js",
+  "main": "client.js",
   "scripts": {
-    "start": "node index.js",
-    "watch": "nodemon index.js",
+    "start": "node client.js",
+    "watch": "nodemon client.js",
     "lint": "eslint '**/*.js'",
     "test": "jest --coverage --verbose",
     "test-watch": "jest --coverage --verbose --watch",
