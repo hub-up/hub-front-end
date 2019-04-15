@@ -10,7 +10,7 @@ require('dotenv').config();
 
 // Socket.io
 const io = require('socket.io-client');
-const SERVER_URL = /* process.env.SERVER_URL || */ `http://localhost:3000`;
+const SERVER_URL = process.env.SERVER_URL || `http://localhost:3000`;
 const socket = io.connect(SERVER_URL);
 
 // Colors
