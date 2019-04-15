@@ -6,12 +6,16 @@ class User {
   constructor() {
     this.username = null;
     this.socketId = null;
+    this.room = null;
   }
   setUsername(name) {
     this.username = name;
   }
   setSocketId(id) {
     this.socketId = id;
+  }
+  setRoom(room) {
+    this.room = room;
   }
 }
 
