@@ -1,3 +1,5 @@
+#!/usr/bin/env node
+
 'use strict';
 
 /***
@@ -10,8 +12,9 @@ require('dotenv').config();
 
 // Socket.io
 const io = require('socket.io-client');
-const SERVER_URL = process.env.SERVER_URL || 'http://localhost:3000';
-const socket = io.connect(SERVER_URL);
+const url = 'https://afternoon-eyrie-23717.herokuapp.com';
+let socket = io.connect(url);
+
 
 // Colors
 const chalk = require('chalk');
@@ -137,6 +140,11 @@ function chatCommand(cmd, arg) {
       newNick = arg.match(/[a-z]+\b/i)[0]; // No numbers allowed in a newNick at present
       message = `${chalk.red(oldNick)} changed their name to ${chalk.green(newNick)}`;
       socket.emit('nick', { oldNick, newNick, message });
+      break;
+    case 'launch':
+      socket.emit('disconnect-start', { username: user.username });
+      socket.disconnect();
+      socket = io.connect('http://localhost:3000');
       break;
     // TODO: User can create and automatically join a room from the lobby
     case 'room':

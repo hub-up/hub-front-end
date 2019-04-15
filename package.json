@@ -1,8 +1,11 @@
 {
-  "name": "hub-front-end",
+  "name": "hubbub_community",
   "version": "0.0.1",
   "description": ".",
   "main": "client.js",
+  "bin": {
+    "bamboozle": "./client.js"
+  },
   "scripts": {
     "start": "node client.js",
     "watch": "nodemon client.js",

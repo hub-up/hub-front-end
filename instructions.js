@@ -13,9 +13,8 @@ ${chalk.underline.bold('Chat Commands')}
 /me :D ← ${chalk.magenta(':D')}
 /msg ${chalk.yellow('user')} ← Send a direct message to ${chalk.yellow('user')}
 /nick ${chalk.cyan('username')} ← Update your username to ${chalk.cyan('username')}
-/room ${chalk.green('name')} ← TODO: Create and automatically join a room called ${chalk.green(
-  'name'
-)}
+/room ${chalk.green('name')} ← TODO: Create and automatically join a room called ${chalk.green('name')}
+/launch ← send me to a game!
 `;
 
 module.exports = instructions;
