@@ -8,7 +8,7 @@
 /*** IMPORTS AND INITIALIZATION ***/
 // Socket.io
 const io = require('socket.io-client');
-const socket = io.connect('http://localhost:3000');
+let socket = io.connect('http://localhost:3000');
 
 // Colors
 const chalk = require('chalk');
@@ -95,6 +95,9 @@ rl.on('close', () => {
 function chatCommand(cmd, arg) {
   let message, newNick, oldNick, recipient;
   switch (cmd) {
+    case 'speak':
+      socket.emit('speak', { msg: 'howdy' });
+      break;
     // Exit the program; disconnect from the socket and CLI interface
     case 'bye':
       socket.emit('disconnect-start', { username: user.username });
@@ -114,7 +117,8 @@ function chatCommand(cmd, arg) {
       break;
     // TODO: User can join an existing room
     case 'join':
-      log('TODO');
+      socket.emit('join', { room: arg, user: user });
+      socket = io(`${arg}`);
       break;
     // User can emote
     // TODO: Hook this up to emojic
@@ -160,10 +164,14 @@ socket.on('details-io', payload => {
   const message = `
 Your Socket.io client id is ${chalk.cyan(payload.socketId)}
 Your username is ${chalk.cyan(payload.username)}
-You are one of ${chalk.cyan(payload.usersNum)} users connected to ${chalk.cyan(payload.namespace)}
+You are one of ${chalk.cyan(payload.usersNum)} users connected to ${chalk.cyan(payload.room)}
 Other users in the room are: ${users}
 `;
   log(message);
+});
+
+socket.on('say hi', payload => {
+  console.log(payload);
 });
 
 // A disconnect event is received from the server
@@ -194,6 +202,11 @@ socket.on('login-update-io', id => {
 
   user.setSocketId(id);
 });
+
+socket.on('join-io', payload => {
+  console.log(`Joined new room ${payload}`);
+});
+
 
 // A nick event is received from the server
 socket.on('nick-io', payload => {
