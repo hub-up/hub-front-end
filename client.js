@@ -10,7 +10,7 @@
 /*** IMPORTS AND INITIALIZATION ***/
 require('dotenv').config();
 const SERVER_URL = require('./server-url.js');
-console.log(`Hubbub client up and running! Using SERVER_URL: ${SERVER_URL}`);
+console.log(`Hubbub client up and running! Connectin to the server at: ${SERVER_URL}`);
 
 // Socket.io
 const io = require('socket.io-client');
@@ -52,7 +52,9 @@ const log = msg => {
 
 // Sign in as username
 const welcome = chalk.underline.bold(`\nWelcome to Hubbub!`);
-rl.question(chalk.white(`${welcome}\n\nPlease enter a username: `), entry => {
+const usernamePrompt = `\n\nPlease enter a username: `;
+const greeting = welcome + usernamePrompt;
+rl.question(chalk.white(greeting), entry => {
   if (entry) {
     user.setUsername(entry.trim());
     const message = `${chalk.yellow(user.username)} has joined the chat`;
@@ -204,9 +206,11 @@ socket.on('login-io', payload => {
 // A login-update event is received from the server
 // Directed to new user
 socket.on('login-update-io', update => {
-  // TODO should indicate the namespace
-  const message = `${emojic.grin} Welcome to the server, ${user.username}! ${emojic.wave}`;
-  log(chalk.yellow(message));
+  const message = chalk.yellow(
+    `\n${emojic.grin} Welcome to Hubbub, ${user.username}! ${emojic.wave}`
+  );
+  const helpCmd = `\nType ${chalk.cyan('/help')} for a list of commands.\n`;
+  log(message + helpCmd);
 
   const { id, room } = update;
 
