@@ -70,6 +70,8 @@ rl.question(chalk.white(greeting), entry => {
 
 // Input handler
 rl.on('line', line => {
+  // The maximum length of a message is `maxLength` characters
+  const maxLength = 240;
   line = line.trim();
   // If it starts with a slash and text
   if (line[0] === '/' && line.length > 1) {
@@ -79,9 +81,12 @@ rl.on('line', line => {
     const arg = line.slice(cmd.length + 2, line.length);
     // Fire off a chat command
     chatCommand(cmd, arg);
-  } else {
+  } else if (line.length <= maxLength) {
     // Send chat message to the server
     socket.emit('chat', { message: line, username: user.username, room: user.room });
+  } else {
+    const tooLong = chalk.red(`Your message can be no more than ${maxLength} characters.`);
+    log(tooLong);
   }
   // Shows the prompt character
   rl.prompt(true);
@@ -152,7 +157,7 @@ function chatCommand(cmd, arg) {
       socket.disconnect();
       socket = io.connect('http://localhost:3000');
       break;
-    // TODO: User can create and automatically join a room from the lobby
+    // User can create and automatically join a room from the lobby
     case 'room':
       room = user.room;
       newRoom = arg.match(/[a-z]+\b/i)[0]; // new room name
