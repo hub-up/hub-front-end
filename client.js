@@ -14,7 +14,7 @@ console.log(`Hubbub client up and running! Using SERVER_URL: ${SERVER_URL}`);
 
 // Socket.io
 const io = require('socket.io-client');
-const socket = io.connect(SERVER_URL);
+let socket = io.connect(SERVER_URL);
 
 // Colors
 const chalk = require('chalk');
