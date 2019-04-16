@@ -68,12 +68,28 @@ rl.question(chalk.white(greeting), entry => {
   }
 });
 
+// Basic flow control - prevent spamming
+// 10 messages in 4 seconds, then throttled.
+// Gotta keep to average of < 1 message per 4 seconds
+// Unless they are commands.
+// TODO: Include DMs in flow control!
+let msgCount = 0;
+const msgMax = 10;
+const interval = 4000;
+setInterval(() => {
+  if (msgCount >= 0) {
+    msgCount--;
+  }
+}, interval);
+
 // Input handler
 rl.on('line', line => {
+  // Flow control
+  msgCount++;
   // The maximum length of a message is `maxLength` characters
-  const maxLength = 240;
   // Remove leading or trailing spaces
   line = line.trim();
+  const maxLength = 240;
   // If it starts with a slash and text
   if (line[0] === '/' && line.length > 1) {
     // Grab the first set of letters after the slash
@@ -82,6 +98,9 @@ rl.on('line', line => {
     const arg = line.slice(cmd.length + 2, line.length);
     // Fire off a chat command
     chatCommand(cmd, arg);
+    // Flow control
+  } else if (msgCount >= msgMax) {
+    log(chalk.red(`Message not sent. You're typing up a storm! Wait... ${emojic.scream}`));
   } else if (line.length <= maxLength) {
     // Send chat message to the server
     socket.emit('chat', { message: line, username: user.username, room: user.room });
