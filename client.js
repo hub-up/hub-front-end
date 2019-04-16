@@ -33,6 +33,7 @@ const user = require('./user.js');
 // Chat room instructions
 const instructions = require('./instructions');
 
+
 /*** READLINE CLI INTERFACE ***/
 /**
  * Helper function that preserves the prompt and cursor position,
@@ -201,7 +202,9 @@ function chatCommand(cmd, arg) {
     case 'launch':
       socket.emit('disconnect-start', { username: user.username });
       socket.disconnect();
-      socket = io.connect('http://localhost:3000');
+      socket = io.connect('http://localhost:3333');
+      console.log(user);
+      socket.emit('user', user);
       break;
     // User can create and automatically join a room from the lobby
     case 'room':
@@ -238,6 +241,7 @@ Other users in the room are: ${users}
 
 // A disconnect event is received from the server
 socket.on('disconnect-io', user => {
+  userInfo = user;
   const username = chalk.yellow(user.username);
   log(chalk.cyan(`${emojic.loudspeaker} ${username} has left the chat ${emojic.upsideDownFace}`));
   // Proceed with disconnection
