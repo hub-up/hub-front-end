@@ -144,6 +144,12 @@ rl.on('close', () => {
   process.exit(0);
 });
 
+//On any closure of the program: Ctrl + C in terminal
+rl.on('end', () => {
+  log(`${emojic.smiley} Have a great day! ${emojic.wave}`);
+  process.exit(0);
+});
+
 /**
  * Handler function for custom chatroom commands
  * @function
