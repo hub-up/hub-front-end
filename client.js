@@ -47,7 +47,7 @@ const log = msg => {
   console.log(msg);
 
   // Shows the prompt character
-  rl.prompt();
+  rl.prompt(true);
 };
 
 // Sign in as username
@@ -61,7 +61,7 @@ rl.question(chalk.white(greeting), entry => {
     // Announce user to the server
     socket.emit('login', { message, username: user.username });
     // Shows the prompt character
-    rl.prompt();
+    rl.prompt(true);
   } else {
     // TODO This doesn't keep them from signing in to listen
     log('Please enter a username.');
@@ -84,7 +84,7 @@ rl.on('line', line => {
     socket.emit('chat', { message: line, username: user.username, room: user.room });
   }
   // Shows the prompt character
-  rl.prompt();
+  rl.prompt(true);
 });
 
 // Close program
@@ -119,7 +119,7 @@ function chatCommand(cmd, arg) {
     // User can leave their current room and return to the lobby
     case 'leave':
       room = user.room;
-      newRoom = 'lobby';
+      newRoom = 'Lobby';
       socket.emit('room', { newRoom, room, user });
       break;
     // TODO: User can join an existing room
