@@ -10,7 +10,7 @@
 /*** IMPORTS AND INITIALIZATION ***/
 require('dotenv').config();
 const SERVER_URL = require('./server-url.js');
-console.log(`Hubbub client up and running! Using SERVER_URL: ${SERVER_URL}`);
+console.log(`Hubbub client up and running!\nConnecting to the server at: ${SERVER_URL}`);
 
 // Socket.io
 const io = require('socket.io-client');
@@ -47,28 +47,72 @@ const log = msg => {
   console.log(msg);
 
   // Shows the prompt character
-  rl.prompt();
+  rl.prompt(true);
 };
 
-// Sign in as username
-const welcome = chalk.underline.bold(`\nWelcome to Hubbub!`);
-rl.question(chalk.white(`${welcome}\n\nPlease enter a username: `), entry => {
-  if (entry) {
-    user.setUsername(entry.trim());
-    const message = `${chalk.yellow(user.username)} has joined the chat`;
-    // Announce user to the server
-    socket.emit('login', { message, username: user.username });
-    // Shows the prompt character
-    rl.prompt();
-  } else {
-    // TODO This doesn't keep them from signing in to listen
-    log('Please enter a username.');
+// greeting used in loginUser function
+const welcome = chalk.underline.bold(`\nWelcome to Hubbub!\n`);
+const usernamePrompt = `\nPlease enter a username: `;
+const greeting = chalk.white(welcome + usernamePrompt);
+/***
+ * loginUser returns a readline question prompt with a callback that
+ * queries the server for the user's username input and requests a new
+ * username entry if there is a duplicate. Otherwise, it adds the username
+ * to the user object, emits a login event, and sets a sticky prompt.
+ * @function
+ * @name loginUser
+ ***/
+const loginUser = () =>
+  rl.question(greeting, entry => {
+    entry = entry.trim();
+    // Check server to see if the username is in use
+    socket.emit('is-duplicate', entry);
+    // Server returns an is-duplicate event with a Boolean payload
+    socket.on('is-duplicate-io', isDuplicate => {
+      // If the entry is in use, log it and call the loginUser function recursively
+      if (isDuplicate) {
+        log(chalk.red(`That username is already in use!`));
+        loginUser();
+        // Proceed if the entry is not in use as a username
+      } else {
+        // Base case for the recursion
+        if (user.username) {
+          return;
+        }
+        user.setUsername(entry);
+        const message = `${chalk.yellow(user.username)} has joined the chat`;
+        // Announce user to the server
+        socket.emit('login', { message, username: user.username });
+        // Shows the prompt character
+        rl.prompt(true);
+      }
+    });
+  });
+
+loginUser();
+
+// Basic flow control - prevent spamming
+// 10 messages in 4 seconds, then throttled.
+// Gotta keep to average of < 1 message per 4 seconds
+// Unless they are commands.
+// TODO: Include DMs in flow control!
+let msgCount = 0;
+const msgMax = 10;
+const interval = 4000;
+setInterval(() => {
+  if (msgCount >= 0) {
+    msgCount--;
   }
-});
+}, interval);
 
 // Input handler
 rl.on('line', line => {
+  // Flow control
+  msgCount++;
+  // The maximum length of a message is `maxLength` characters
+  // Remove leading or trailing spaces
   line = line.trim();
+  const maxLength = 240;
   // If it starts with a slash and text
   if (line[0] === '/' && line.length > 1) {
     // Grab the first set of letters after the slash
@@ -77,12 +121,21 @@ rl.on('line', line => {
     const arg = line.slice(cmd.length + 2, line.length);
     // Fire off a chat command
     chatCommand(cmd, arg);
-  } else {
+    // Flow control
+  } else if (msgCount >= msgMax) {
+    log(chalk.red(`Message not sent. You're typing up a storm! Wait... ${emojic.scream}`));
+  } else if (line.length <= maxLength) {
     // Send chat message to the server
     socket.emit('chat', { message: line, username: user.username, room: user.room });
+  } else {
+    const { scissors } = emojic;
+    const tooLong = chalk.red(
+      `Your message can be no more than ${maxLength} characters. ${scissors}`
+    );
+    log(tooLong);
   }
   // Shows the prompt character
-  rl.prompt();
+  rl.prompt(true);
 });
 
 // Close program
@@ -117,7 +170,7 @@ function chatCommand(cmd, arg) {
     // User can leave their current room and return to the lobby
     case 'leave':
       room = user.room;
-      newRoom = 'lobby';
+      newRoom = 'Lobby';
       socket.emit('room', { newRoom, room, user });
       break;
     // TODO: User can join an existing room
@@ -134,7 +187,7 @@ function chatCommand(cmd, arg) {
     // Users can direct message each other
     case 'msg':
       recipient = arg.match(/[a-z]+\b/i)[0];
-      message = arg.substr(recipient.length, arg.length);
+      message = arg.slice(recipient.length, arg.length);
       socket.emit('private', { message, to: recipient, from: user.username });
       break;
     // Users can change their usernames
@@ -150,7 +203,7 @@ function chatCommand(cmd, arg) {
       socket.disconnect();
       socket = io.connect('http://localhost:3000');
       break;
-    // TODO: User can create and automatically join a room from the lobby
+    // User can create and automatically join a room from the lobby
     case 'room':
       room = user.room;
       newRoom = arg.match(/[a-z]+\b/i)[0]; // new room name
@@ -204,9 +257,11 @@ socket.on('login-io', payload => {
 // A login-update event is received from the server
 // Directed to new user
 socket.on('login-update-io', update => {
-  // TODO should indicate the namespace
-  const message = `${emojic.grin} Welcome to the server, ${user.username}! ${emojic.wave}`;
-  log(chalk.yellow(message));
+  const message = chalk.yellow(
+    `\n${emojic.grin} Welcome to Hubbub, ${user.username}! ${emojic.wave}`
+  );
+  const helpCmd = `\nType ${chalk.cyan('/help')} for a list of commands.\n`;
+  log(message + helpCmd);
 
   const { id, room } = update;
 
@@ -231,8 +286,8 @@ socket.on('nick-update-io', payload => {
 // A nick-update-failed event is received from the server
 // Only sent to the user who tried to change their name
 // Happens when user tries to change their username to one that's already taken
-socket.on('nick-update-failed-io', payload => {
-  log(chalk.red(`The username '${payload.username}' is already taken`));
+socket.on('nick-update-failed-io', () => {
+  log(chalk.red(`That username is already in use!`));
 });
 
 // A private event is received from the server
@@ -249,7 +304,8 @@ socket.on('room-join-io', payload => {
   log(message);
 });
 
-// Update the user object
+// A room-join-update event is received from the server
+// Update the user object with the new room
 socket.on('room-join-update-io', payload => {
   const message = `You have joined ${chalk.cyan(payload.newRoom)}`;
   user.setRoom(payload.newRoom);
