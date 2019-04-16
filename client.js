@@ -9,12 +9,12 @@
 
 /*** IMPORTS AND INITIALIZATION ***/
 require('dotenv').config();
+const SERVER_URL = require('./server-url.js');
+console.log(`Hubbub client up and running! Using SERVER_URL: ${SERVER_URL}`);
 
 // Socket.io
 const io = require('socket.io-client');
-const url = 'https://afternoon-eyrie-23717.herokuapp.com';
-let socket = io.connect(url);
-
+const socket = io.connect(SERVER_URL);
 
 // Colors
 const chalk = require('chalk');
