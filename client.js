@@ -62,24 +62,37 @@ const greeting = chalk.white(welcome + usernamePrompt);
  * @function
  * @name loginUser
  ***/
-const loginUser = () =>
-  rl.question(greeting, entry => {
-    entry = entry.trim();
+const loginUser = () => {
+  rl.question(greeting, (entry = null) => {
+    // Don't go down the recursive rabbit hole with no entry
+    if (!entry) {
+      // TODO
+      log('TODO: Handle no entry better');
+      socket.emit('disconnect');
+      rl.close();
+    }
+    let trimmed = entry.trim();
     // Check server to see if the username is in use
-    socket.emit('is-duplicate', entry);
+    if (trimmed) {
+      socket.emit('is-duplicate', trimmed);
+    }
     // Server returns an is-duplicate event with a Boolean payload
     socket.on('is-duplicate-io', isDuplicate => {
+      if (!trimmed) {
+        return;
+      }
       // If the entry is in use, log it and call the loginUser function recursively
       if (isDuplicate) {
         log(chalk.red(`That username is already in use!`));
-        loginUser();
+        trimmed = null;
+        return loginUser();
         // Proceed if the entry is not in use as a username
       } else {
         // Base case for the recursion
         if (user.username) {
           return;
         }
-        user.setUsername(entry);
+        user.setUsername(trimmed);
         const message = `${chalk.yellow(user.username)} has joined the chat`;
         // Announce user to the server
         socket.emit('login', { message, username: user.username });
@@ -88,6 +101,7 @@ const loginUser = () =>
       }
     });
   });
+};
 
 loginUser();
 
@@ -140,12 +154,6 @@ rl.on('line', line => {
 
 // Close program
 rl.on('close', () => {
-  log(`${emojic.smiley} Have a great day! ${emojic.wave}`);
-  process.exit(0);
-});
-
-//On any closure of the program: Ctrl + C in terminal
-rl.on('end', () => {
   log(`${emojic.smiley} Have a great day! ${emojic.wave}`);
   process.exit(0);
 });
