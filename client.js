@@ -72,6 +72,7 @@ rl.question(chalk.white(greeting), entry => {
 rl.on('line', line => {
   // The maximum length of a message is `maxLength` characters
   const maxLength = 240;
+  // Remove leading or trailing spaces
   line = line.trim();
   // If it starts with a slash and text
   if (line[0] === '/' && line.length > 1) {
@@ -85,7 +86,10 @@ rl.on('line', line => {
     // Send chat message to the server
     socket.emit('chat', { message: line, username: user.username, room: user.room });
   } else {
-    const tooLong = chalk.red(`Your message can be no more than ${maxLength} characters.`);
+    const { scissors } = emojic;
+    const tooLong = chalk.red(
+      `Your message can be no more than ${maxLength} characters. ${scissors}`
+    );
     log(tooLong);
   }
   // Shows the prompt character
@@ -258,7 +262,8 @@ socket.on('room-join-io', payload => {
   log(message);
 });
 
-// Update the user object
+// A room-join-update event is received from the server
+// Update the user object with the new room
 socket.on('room-join-update-io', payload => {
   const message = `You have joined ${chalk.cyan(payload.newRoom)}`;
   user.setRoom(payload.newRoom);
