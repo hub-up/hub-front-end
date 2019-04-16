@@ -10,7 +10,7 @@
 /*** IMPORTS AND INITIALIZATION ***/
 require('dotenv').config();
 const SERVER_URL = require('./server-url.js');
-console.log(`Hubbub client up and running! Connectin to the server at: ${SERVER_URL}`);
+console.log(`Hubbub client up and running!\nConnecting to the server at: ${SERVER_URL}`);
 
 // Socket.io
 const io = require('socket.io-client');
