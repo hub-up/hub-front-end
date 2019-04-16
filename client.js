@@ -7,10 +7,11 @@
 
 /*** IMPORTS AND INITIALIZATION ***/
 require('dotenv').config();
+const SERVER_URL = require('./server-url.js');
+console.log(`Hubbub client up and running! Using SERVER_URL: ${SERVER_URL}`);
 
 // Socket.io
 const io = require('socket.io-client');
-const SERVER_URL = process.env.SERVER_URL || `http://localhost:3000`;
 const socket = io.connect(SERVER_URL);
 
 // Colors
