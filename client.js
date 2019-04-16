@@ -50,23 +50,46 @@ const log = msg => {
   rl.prompt(true);
 };
 
-// Sign in as username
-const welcome = chalk.underline.bold(`\nWelcome to Hubbub!`);
-const usernamePrompt = `\n\nPlease enter a username: `;
-const greeting = welcome + usernamePrompt;
-rl.question(chalk.white(greeting), entry => {
-  if (entry) {
-    user.setUsername(entry.trim());
-    const message = `${chalk.yellow(user.username)} has joined the chat`;
-    // Announce user to the server
-    socket.emit('login', { message, username: user.username });
-    // Shows the prompt character
-    rl.prompt(true);
-  } else {
-    // TODO This doesn't keep them from signing in to listen
-    log('Please enter a username.');
-  }
-});
+// greeting used in loginUser function
+const welcome = chalk.underline.bold(`\nWelcome to Hubbub!\n`);
+const usernamePrompt = `\nPlease enter a username: `;
+const greeting = chalk.white(welcome + usernamePrompt);
+/***
+ * loginUser returns a readline question prompt with a callback that
+ * queries the server for the user's username input and requests a new
+ * username entry if there is a duplicate. Otherwise, it adds the username
+ * to the user object, emits a login event, and sets a sticky prompt.
+ * @function
+ * @name loginUser
+ ***/
+const loginUser = () =>
+  rl.question(greeting, entry => {
+    entry = entry.trim();
+    // Check server to see if the username is in use
+    socket.emit('is-duplicate', entry);
+    // Server returns an is-duplicate event with a Boolean payload
+    socket.on('is-duplicate-io', isDuplicate => {
+      // If the entry is in use, log it and call the loginUser function recursively
+      if (isDuplicate) {
+        log(chalk.red(`That username is already in use!`));
+        loginUser();
+        // Proceed if the entry is not in use as a username
+      } else {
+        // Base case for the recursion
+        if (user.username) {
+          return;
+        }
+        user.setUsername(entry);
+        const message = `${chalk.yellow(user.username)} has joined the chat`;
+        // Announce user to the server
+        socket.emit('login', { message, username: user.username });
+        // Shows the prompt character
+        rl.prompt(true);
+      }
+    });
+  });
+
+loginUser();
 
 // Basic flow control - prevent spamming
 // 10 messages in 4 seconds, then throttled.
@@ -164,7 +187,7 @@ function chatCommand(cmd, arg) {
     // Users can direct message each other
     case 'msg':
       recipient = arg.match(/[a-z]+\b/i)[0];
-      message = arg.substr(recipient.length, arg.length);
+      message = arg.slice(recipient.length, arg.length);
       socket.emit('private', { message, to: recipient, from: user.username });
       break;
     // Users can change their usernames
@@ -263,8 +286,8 @@ socket.on('nick-update-io', payload => {
 // A nick-update-failed event is received from the server
 // Only sent to the user who tried to change their name
 // Happens when user tries to change their username to one that's already taken
-socket.on('nick-update-failed-io', payload => {
-  log(chalk.red(`The username '${payload.username}' is already taken`));
+socket.on('nick-update-failed-io', () => {
+  log(chalk.red(`That username is already in use!`));
 });
 
 // A private event is received from the server
